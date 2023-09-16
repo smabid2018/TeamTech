@@ -1,7 +1,6 @@
 const Space = require('../models/space')
 const formidable = require('formidable');
-const _ = require('lodash')
-const fs = require('fs')
+
 
 const getSpaceById = async(req,res,next,id) => {
     const parkingSpace = await Space.findById(id).populate('user')
@@ -12,11 +11,6 @@ const getSpaceById = async(req,res,next,id) => {
     }
     req.space = parkingSpace
     next()
-}
-
-const getProduct = (req,res) => {
-    req.product.photo = undefined  //undefining bulky photo so that it doesn't slow the system
-    return res.json(req.product)
 }
 
 const createSpace = (req,res) => {
@@ -64,7 +58,7 @@ const createSpace = (req,res) => {
 /////
 
 
-//productListiong
+
 const getAllSpaces = async (req,res)=>{
 
     const limit =  Number(req.query.limit) || 8
@@ -91,7 +85,28 @@ const getAllSpaces = async (req,res)=>{
 
 //
 const updateParking = async (req,res,next) => {
-    
+    let EV_no = req.body.reservation.EV
+    let four_wheeler_no = req.body.reservation.four_wheeler
+    let two_wheeler_no = req.body.reservation.two_wheeler
+
+    console.log(req.body.reservation)
+
+    const space_id = req.body.reservation.location
+    const parkingSpace = await Space.findById(space_id)
+
+    parkingSpace.EV = parkingSpace.EV - EV_no
+    parkingSpace.four_wheeler = parkingSpace.four_wheeler - four_wheeler_no
+    parkingSpace.two_wheeler = parkingSpace.two_wheeler - two_wheeler_no
+
+    if (parkingSpace.EV < 0 || parkingSpace.four_wheeler < 0 || parkingSpace.two_wheeler < 0) {
+        return res.json({
+            err:"Parking limit exceeded."
+        })
+    }
+
+    await parkingSpace.save()
+
+    next()
 }
 module.exports = {
     getSpaceById,
